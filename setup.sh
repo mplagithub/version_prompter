@@ -1,6 +1,6 @@
 #!/bin/bash
 
-HOOK_SOURCE="./version_prompter/pre-commit"
+HOOK_SOURCE="pre-commit"
 
 for repo in ../*/.git; do
     hooks_dir="$repo/hooks"
