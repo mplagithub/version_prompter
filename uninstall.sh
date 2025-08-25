@@ -1,6 +1,12 @@
 #!/bin/bash
 
-for repo in ../*/.git; do
+if [ -n "$1" ]; then
+    repos=( "../$1/.git" )
+else
+    repos=( ../*/.git )
+fi
+
+for repo in "${repos[@]}"; do
     # Skip version_prompter directory
     if [[ "$repo" == *"/version_prompter/.git" ]]; then
         continue
