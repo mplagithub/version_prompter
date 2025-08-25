@@ -1,57 +1,49 @@
 #!/bin/bash
-
-# Check if all CMakeLists.txt files have already been bumped
-
-#this requires different design...
-
-# 1.) Not necessarily all CMake versions will require update (maybe change is only for spa3, not spa2)
-# 2.) I need to prompt file by file
-# 3.) Somehow I need then to reuse that knowledge in updating zuul project
-
 echo "Running pre-push hook..."
+not_bumped_files=()
 
-all_bumped=true
 files=$(find . -type d -name .cs -prune -o -name CMakeLists.txt -print)
+
 while read -r file; do
   prev_line=$(git show HEAD~1:"$file" 2>/dev/null | grep -E 'project\([^)]+VERSION[[:space:]]+[0-9]+\.[0-9]+\.[0-9]+')
   curr_line=$(git show HEAD:"$file" 2>/dev/null | grep -E 'project\([^)]+VERSION[[:space:]]+[0-9]+\.[0-9]+\.[0-9]+')
   prev_version=$(echo "$prev_line" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
   curr_version=$(echo "$curr_line" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
   if [[ -n "$prev_version" && -n "$curr_version" && "$prev_version" == "$curr_version" ]]; then
-    all_bumped=false
-    echo "$file Not bumped"
-    #TODO: store file path
-    break
+    not_bumped_files+=("$file")
   fi
-done <<< "$files"
+done <<< "$(printf '%s\n' $files)"
 
-if $all_bumped; then
+if [ ${#not_bumped_files[@]} -eq 0 ]; then
   echo "All CMakeLists.txt versions are already bumped. Pushing change..."
   exit 0
 fi
 
 
+REPO_ROOT=$(git rev-parse --show-toplevel)
+cd "$REPO_ROOT" || exit 1
+for file in "${not_bumped_files[@]}"; do
+  read -p "You did not update module version in $file. Should I update it (CMake/zuul)? (y/n): " answer < /dev/tty
+  if [[ "$answer" == "y" ]]; then
+    read -p "Which version part to bump? (major/minor/patch, or leave empty to skip): " part < /dev/tty
+    if [[ "$part" =~ ^(major|minor|patch)$ ]]; then
+      "$REPO_ROOT/.git/hooks/bump_cmake_version.sh" "$part" "$file"
+    fi
+  else
+    echo "Skipped version update as requested..."
+  fi
+done
 
-#TODO iterate through each file from stored with above TODO, and apply update with bump_cmake_version.sh (which must be updated), since it will get path now
 
-read -p "You did not update module version. Should I update it (CMake/zuul)? (y/n): " answer < /dev/tty
-if [[ "$answer" == "n" ]]; then
-  echo "Skipped version update as requested. Pushing change..."
+if git diff --quiet; then
+  echo "No updates made, pushing change..."
   exit 0
-fi
-
-# update version:
-read -p "Which version part to bump? (major/minor/patch, or leave empty to skip): " part < /dev/tty
-if [[ "$part" =~ ^(major|minor|patch)$ ]]; then
-  # Find the repo root and call the script from there
-  REPO_ROOT=$(git rev-parse --show-toplevel)
-  # Add all modified CMakeLists.txt files to the commit
-  cd "$REPO_ROOT" || exit 1
-  "$REPO_ROOT/.git/hooks/bump_cmake_version.sh" "$part"
-  git ls-files -m | grep 'CMakeLists.txt$'
 else
-  echo "No version bump performed."
+  echo "Please double check stage/diff, 'commit --amend' changes, and push again"
   exit 1
 fi
-echo "Please check versions and push again"
-exit 1
+
+
+
+
+
