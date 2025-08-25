@@ -1,0 +1,7 @@
+#!/bin/bash
+read -p "Should I update version of module (CMake/zuul)? (y/n): " answer
+if [[ "$answer" != "y" ]]; then
+  echo "Commit aborted."
+  exit 1
+fi
+echo "Skipped version update basing on user input"
