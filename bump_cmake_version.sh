@@ -41,3 +41,15 @@ new_line=$(echo "$new_version_line" | sed "s/$version/$new_version/")
 # Use sed to replace the line in the file
 sed -i "s|$new_version_line|$new_line|" "$FILE"
 echo "Updated $FILE: $version -> $new_version"
+
+#update also zuul accordingly
+# NOTE: this might not work fully correct in following corner case
+# initial versions for spa2 and spa3 are the same (e.g. 1.2.3)
+# but we just want to bump spa2, and leave spa3 as is...
+ZUUL_PROJECT_CONFIG="./zuul.d/project.yaml"
+if [[ -f "$ZUUL_PROJECT_CONFIG" ]]; then
+    sed -i "s/$version/$new_version/" "$ZUUL_PROJECT_CONFIG"
+    echo "Updated $ZUUL_PROJECT_CONFIG: $version -> $new_version"
+else
+    echo "WARNING: $ZUUL_PROJECT_CONFIG not found, skipping update"
+fi
