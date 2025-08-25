@@ -1,7 +1,0 @@
-#!/bin/bash
-read -p "Should I update version of module (CMake/zuul)? (y/n): " answer < /dev/tty
-if [[ "$answer" == "n" ]]; then
-  echo "Skipped version update basing on user input"
-  exit 1
-fi
-echo "Continuing with commit..."

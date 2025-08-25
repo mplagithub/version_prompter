@@ -1,6 +1,7 @@
 #!/bin/bash
 
-HOOK_SOURCE="./pre-commit"
+HOOK_SOURCE="./pre-push"
+CMAKE_UPDATER="./bump_cmake_version.sh"
 
 for repo in ../*/.git; do
     # Skip version_prompter directory
@@ -9,8 +10,10 @@ for repo in ../*/.git; do
     fi
     hooks_dir="$repo/hooks"
     if [ -d "$hooks_dir" ]; then
-        cp "$HOOK_SOURCE" "$hooks_dir/pre-commit"
-        chmod +x "$hooks_dir/pre-commit"
-        echo "Installed pre-commit hook in $hooks_dir"
+        cp "$HOOK_SOURCE" "$hooks_dir/pre-push"
+        chmod +x "$hooks_dir/pre-push"
+        cp "$CMAKE_UPDATER" "$hooks_dir/bump_cmake_version.sh"
+        chmod +x "$hooks_dir/bump_cmake_version.sh"
+        echo "Installed pre-push hook and bump_cmake_version.sh in $hooks_dir"
     fi
 done
